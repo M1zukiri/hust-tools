@@ -1,0 +1,8 @@
+{
+    "output_dir": "E:/Sync/毕业设计/参考文献",
+    "overwrite": true,
+    "pdf_extract_tables": false,
+    "xlsx_max_rows": 1000,
+    "xlsx_max_cols": 50,
+    "ocr_language": "chi_sim+eng"
+}

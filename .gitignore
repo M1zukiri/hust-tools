@@ -1,0 +1,27 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# --- IDE / Editor ---
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# --- Generated / Output files ---
+Png_2_Gif/output.gif
+**/converted_*/
+_tmp_*
+
+# --- OS ---
+Thumbs.db
+.DS_Store
+*.bak
+
+# --- Large binaries (if any) ---
+*.exe

@@ -1,0 +1,35 @@
+# File2MD - 文件转Markdown转换器依赖
+
+# 核心依赖（必需）
+# 这些是所有转换器的基础依赖
+
+# Office文档处理 (DOCX, PPTX, XLSX)
+python-docx>=0.8.11
+python-pptx>=0.6.21
+openpyxl>=3.0.10
+
+# PDF处理（至少安装一个）
+pdfplumber>=0.9.0
+# PyMuPDF>=1.23.0  # 可选，更快的PDF处理
+# pypdf>=3.0.0     # 可选，纯Python PDF处理
+
+# HTML处理（至少安装一个）
+html2text>=2020.1.16
+beautifulsoup4>=4.11.0
+
+# 文本处理
+chardet>=5.0.0  # 编码检测
+
+# OCR处理（可选）
+# pytesseract>=0.3.10  # 需要安装Tesseract OCR引擎
+# Pillow>=9.0.0        # 图像处理
+# easyocr>=1.7.0       # 替代OCR方案
+# paddleocr>=2.7.0     # 百度PaddleOCR
+
+# 其他实用工具
+# pandas>=1.5.0  # 用于高级数据处理
+
+# 开发依赖（可选）
+# pytest>=7.0.0
+# black>=22.0.0
+# flake8>=5.0.0

@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "EWLrNTSmDr4=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\M1zukuro\\Desktop\\个人\\hust-tools\\Gal_Extractor\\GalExtractor.Core\\GalExtractor.Core.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\M1zukuro\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.27\\microsoft.netcore.app.ref.8.0.27.nupkg.sha512",
+    "C:\\Users\\M1zukuro\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.27\\microsoft.windowsdesktop.app.ref.8.0.27.nupkg.sha512",
+    "C:\\Users\\M1zukuro\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.27\\microsoft.aspnetcore.app.ref.8.0.27.nupkg.sha512"
+  ],
+  "logs": []
+}

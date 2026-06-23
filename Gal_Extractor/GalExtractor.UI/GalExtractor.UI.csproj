@@ -1,4 +1,3 @@
-
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -10,6 +9,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GalExtractor.Core\GalExtractor.Core.csproj" />
+    <ProjectReference Include="..\GalExtractor.Plugins.Kirikiri\GalExtractor.Plugins.Kirikiri.csproj" />
+    <ProjectReference Include="..\GalExtractor.Plugins.Circus\GalExtractor.Plugins.Circus.csproj" />
+    <ProjectReference Include="..\GalExtractor.Plugins.Noa\GalExtractor.Plugins.Noa.csproj" />
+    <ProjectReference Include="..\GalExtractor.Plugins.RenPy\GalExtractor.Plugins.RenPy.csproj" />
   </ItemGroup>
 
 </Project>

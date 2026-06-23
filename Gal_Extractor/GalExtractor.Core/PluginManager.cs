@@ -25,15 +25,30 @@ namespace GalExtractor.Core
         public IReadOnlyList<IGameArchive> Parsers => _parsers.AsReadOnly();
 
         /// <summary>
-        /// Loads all plugins from the current assembly and optionally from external assemblies
+        /// Loads all plugins from the current assembly and optionally from external plugin assemblies
         /// </summary>
-        /// <param name="pluginPaths">Optional paths to external plugin assemblies</param>
-        public void LoadPlugins(params string[] pluginPaths)
+        /// <param name="pluginAssemblies">Optional assemblies to scan for plugins</param>
+        public void LoadPlugins(params Assembly[] pluginAssemblies)
         {
-            // Load from the current assembly
+            // Always scan the current assembly (Core)
             LoadFromAssembly(Assembly.GetExecutingAssembly());
 
-            // Load from external assemblies if provided
+            // Scan additional assemblies that were explicitly passed
+            foreach (var assembly in pluginAssemblies)
+            {
+                if (assembly != null)
+                {
+                    LoadFromAssembly(assembly);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Legacy overload: loads plugins from external assembly file paths
+        /// </summary>
+        [Obsolete("Use LoadPlugins(Assembly[]) instead")]
+        public void LoadPluginsFromPaths(params string[] pluginPaths)
+        {
             foreach (var path in pluginPaths)
             {
                 try

@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +9,9 @@ namespace GalExtractor.Plugins.RenPy
 {
     /// <summary>
     /// Parser for Ren'Py archive (.rpa) files
+    /// ⚠ EXPERIMENTAL — This is a simplified placeholder implementation.
+    /// Ren'Py uses Python pickle serialization for its TOC, which this code
+    /// does NOT fully implement. Most real .rpa files will NOT parse correctly.
     /// </summary>
     public class RpaArchive : IGameArchive
     {
@@ -22,20 +24,14 @@ namespace GalExtractor.Plugins.RenPy
             if (stream == null || !stream.CanRead || stream.Length < 20)
                 return false;
 
-            // Save the current position
             long originalPosition = stream.Position;
 
             try
             {
-                // Read the header to check if it's an RPA file
                 using var reader = new BinaryReaderHelper(stream);
                 stream.Position = originalPosition;
 
-                // RPA 3.0+ files start with "RPA-3.0 "
-                // RPA 2.0 files start with "RPA-2.0 "
-                // Older RPA files start with "RPA-1.0"
                 var header = reader.ReadFixedLengthString(20);
-
                 return header.StartsWith("RPA-");
             }
             catch
@@ -44,7 +40,6 @@ namespace GalExtractor.Plugins.RenPy
             }
             finally
             {
-                // Restore the original position
                 stream.Position = originalPosition;
             }
         }
@@ -55,8 +50,6 @@ namespace GalExtractor.Plugins.RenPy
                 throw new ArgumentNullException(nameof(stream));
 
             var entries = new List<IArchiveEntry>();
-
-            // Save the current position
             long originalPosition = stream.Position;
 
             try
@@ -64,16 +57,14 @@ namespace GalExtractor.Plugins.RenPy
                 using var reader = new BinaryReaderHelper(stream);
                 stream.Position = originalPosition;
 
-                // Read the header
                 var header = reader.ReadFixedLengthString(20);
                 int version = 0;
-                long offset = 0;
-                int key = 0;
+                uint offset = 0;
+                uint key = 0;
                 bool isEncrypted = false;
 
                 if (header.StartsWith("RPA-3.0"))
                 {
-                    // RPA 3.0 format
                     version = 3;
                     offset = reader.ReadUInt32();
                     key = reader.ReadUInt32();
@@ -82,7 +73,6 @@ namespace GalExtractor.Plugins.RenPy
                 }
                 else if (header.StartsWith("RPA-2.0"))
                 {
-                    // RPA 2.0 format
                     version = 2;
                     offset = reader.ReadUInt32();
                     key = reader.ReadUInt32();
@@ -91,7 +81,6 @@ namespace GalExtractor.Plugins.RenPy
                 }
                 else if (header.StartsWith("RPA-1.0"))
                 {
-                    // RPA 1.0 format
                     version = 1;
                     offset = reader.ReadUInt32();
                 }
@@ -100,26 +89,21 @@ namespace GalExtractor.Plugins.RenPy
                     throw new NotSupportedException("Unsupported RPA version");
                 }
 
-                // Jump to the table of contents
                 stream.Position = offset;
 
-                // Read the TOC
                 if (version == 1)
                 {
-                    // RPA 1.0 format - simple pickle format
-                    ReadTOCv1(reader, entries, key, isEncrypted);
+                    ReadTOCv1(reader, entries, (int)key, isEncrypted);
                 }
                 else if (version == 2 || version == 3)
                 {
-                    // RPA 2.0/3.0 format - zlib compressed pickle
-                    ReadTOCv2v3(reader, entries, key, isEncrypted, version);
+                    ReadTOCv2v3(reader, entries, (int)key, isEncrypted, version);
                 }
 
                 return entries;
             }
             finally
             {
-                // Restore the original position
                 stream.Position = originalPosition;
             }
         }
@@ -135,53 +119,31 @@ namespace GalExtractor.Plugins.RenPy
             if (outputStream == null)
                 throw new ArgumentNullException(nameof(outputStream));
 
-            // Use the default implementation
             entry.ExtractToStream(outputStream, archiveStream);
         }
 
         private void ReadTOCv1(BinaryReaderHelper reader, List<IArchiveEntry> entries, int key, bool isEncrypted)
         {
-            // RPA 1.0 has a simple pickle format
-            // This is a simplified implementation
-            // In a real implementation, you would need to parse the pickle format
+            uint numEntries = reader.ReadUInt32();
 
-            // For demonstration purposes, we'll use a simple approach
-            // In reality, you would need to implement a proper pickle parser
-
-            // Read the number of entries
-            int numEntries = reader.ReadUInt32();
-
-            for (int i = 0; i < numEntries; i++)
+            for (uint i = 0; i < numEntries; i++)
             {
-                // Read file name length and name
-                int nameLength = reader.ReadUInt32();
-                string name = reader.ReadFixedLengthString(nameLength);
+                uint nameLength = reader.ReadUInt32();
+                string name = reader.ReadFixedLengthString((int)nameLength);
 
-                // Read file offset and length
-                long offset = reader.ReadUInt32();
-                int length = reader.ReadUInt32();
+                uint fileOffset = reader.ReadUInt32();
+                uint length = reader.ReadUInt32();
 
-                // Add the entry
-                entries.Add(new ArchiveEntry(name, length, offset));
+                entries.Add(new ArchiveEntry(name, (long)length, (long)fileOffset));
             }
         }
 
         private void ReadTOCv2v3(BinaryReaderHelper reader, List<IArchiveEntry> entries, int key, bool isEncrypted, int version)
         {
-            // RPA 2.0/3.0 uses zlib compressed pickle format
-            // This is a simplified implementation
-            // In a real implementation, you would need to decompress and parse the pickle format
+            uint compressedLength = reader.ReadUInt32();
 
-            // For demonstration purposes, we'll use a simple approach
-            // In reality, you would need to implement a proper pickle parser
+            byte[] compressedData = reader.ReadBytes((int)compressedLength);
 
-            // Read the compressed data length
-            int compressedLength = reader.ReadUInt32();
-
-            // Read the compressed data
-            byte[] compressedData = reader.ReadBytes(compressedLength);
-
-            // Decompress the data
             byte[] decompressedData;
             using (var compressedStream = new MemoryStream(compressedData))
             using (var decompressionStream = new System.IO.Compression.DeflateStream(compressedStream, System.IO.Compression.CompressionMode.Decompress))
@@ -191,31 +153,20 @@ namespace GalExtractor.Plugins.RenPy
                 decompressedData = resultStream.ToArray();
             }
 
-            // Parse the pickle data
-            // This is a simplified implementation
-            // In reality, you would need to implement a proper pickle parser
-
-            // For demonstration purposes, we'll assume a simple format
-            // In reality, the pickle format is more complex
-
             using var dataStream = new MemoryStream(decompressedData);
             using var dataReader = new BinaryReaderHelper(dataStream);
 
-            // Read the number of entries
-            int numEntries = dataReader.ReadUInt32();
+            uint numEntries = dataReader.ReadUInt32();
 
-            for (int i = 0; i < numEntries; i++)
+            for (uint i = 0; i < numEntries; i++)
             {
-                // Read file name length and name
-                int nameLength = dataReader.ReadUInt32();
-                string name = dataReader.ReadFixedLengthString(nameLength);
+                uint nameLength = dataReader.ReadUInt32();
+                string name = dataReader.ReadFixedLengthString((int)nameLength);
 
-                // Read file offset and length
-                long offset = dataReader.ReadUInt32();
-                int length = dataReader.ReadUInt32();
+                uint fileOffset = dataReader.ReadUInt32();
+                uint length = dataReader.ReadUInt32();
 
-                // Add the entry
-                entries.Add(new ArchiveEntry(name, length, offset));
+                entries.Add(new ArchiveEntry(name, (long)length, (long)fileOffset));
             }
         }
     }

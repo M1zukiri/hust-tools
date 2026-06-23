@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "GalExtractor.Plugins.Kirikiri/1.0.0": {
+        "dependencies": {
+          "GalExtractor.Core": "1.0.0"
+        },
+        "runtime": {
+          "GalExtractor.Plugins.Kirikiri.dll": {}
+        }
+      },
+      "GalExtractor.Core/1.0.0": {
+        "runtime": {
+          "GalExtractor.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "GalExtractor.Plugins.Kirikiri/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "GalExtractor.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

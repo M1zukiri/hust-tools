@@ -7,6 +7,11 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using GalExtractor.Core;
+using GalExtractor.UI.Commands;
+using GalExtractor.Plugins.Circus;
+using GalExtractor.Plugins.Kirikiri;
+using GalExtractor.Plugins.Noa;
+using GalExtractor.Plugins.RenPy;
 using Microsoft.Win32;
 
 namespace GalExtractor.UI.ViewModels
@@ -29,8 +34,13 @@ namespace GalExtractor.UI.ViewModels
             _logText = string.Empty;
             _statusText = "Ready";
 
-            // Load plugins from the current assembly
-            _pluginManager.LoadPlugins();
+            // Load plugins from all referenced plugin assemblies
+            _pluginManager.LoadPlugins(
+                typeof(Xp3Archive).Assembly,
+                typeof(ArcArchive).Assembly,
+                typeof(NoaArchive).Assembly,
+                typeof(RpaArchive).Assembly
+            );
 
             // Initialize commands
             OpenFileCommand = new RelayCommand(OpenFile);
@@ -141,10 +151,14 @@ namespace GalExtractor.UI.ViewModels
             if (string.IsNullOrEmpty(FilePath) || CurrentParser == null)
                 return;
 
-            var dialog = new System.Windows.Forms.FolderBrowserDialog();
-            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            var dialog = new OpenFolderDialog
             {
-                await ExtractAllAsync(dialog.SelectedPath);
+                Title = "Select Output Directory"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await ExtractAllAsync(dialog.FolderName);
             }
         }
 
@@ -341,8 +355,7 @@ namespace GalExtractor.UI.ViewModels
 
         private void Log(string message)
         {
-            LogText += $"[{DateTime.Now:HH:mm:ss}] {message}
-";
+            LogText += $"[{DateTime.Now:HH:mm:ss}] {message}" + Environment.NewLine;
         }
 
         private bool CanExtract()

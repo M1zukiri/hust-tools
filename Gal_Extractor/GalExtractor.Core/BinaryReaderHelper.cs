@@ -1,4 +1,3 @@
-
 using System.IO;
 using System.Text;
 
@@ -11,12 +10,12 @@ namespace GalExtractor.Core
     {
         private readonly bool _isLittleEndian;
 
-        public BinaryReaderHelper(Stream input, bool isLittleEndian = true) : base(input)
+        public BinaryReaderHelper(Stream input, bool isLittleEndian = true) : base(input, Encoding.UTF8, true)
         {
             _isLittleEndian = isLittleEndian;
         }
 
-        public BinaryReaderHelper(Stream input, Encoding encoding, bool isLittleEndian = true) : base(input, encoding)
+        public BinaryReaderHelper(Stream input, Encoding encoding, bool isLittleEndian = true) : base(input, encoding, true)
         {
             _isLittleEndian = isLittleEndian;
         }
@@ -113,7 +112,7 @@ namespace GalExtractor.Core
         /// <returns>The read string</returns>
         public string ReadFixedLengthString(int length, Encoding? encoding = null, bool trimNull = true)
         {
-            encoding ??= Encoding.UTF-8;
+            encoding ??= Encoding.UTF8;
             var bytes = ReadBytes(length);
 
             if (trimNull)

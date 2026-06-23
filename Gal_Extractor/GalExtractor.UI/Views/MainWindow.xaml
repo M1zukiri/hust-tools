@@ -1,10 +1,10 @@
-
 <Window x:Class="GalExtractor.UI.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:GalExtractor.UI.ViewModels"
+        xmlns:conv="clr-namespace:GalExtractor.UI.Converters"
         mc:Ignorable="d"
         Title="GalExtractor - Visual Novel Resource Extractor" 
         Height="600" Width="900"
@@ -13,6 +13,18 @@
     <Window.DataContext>
         <vm:MainWindowViewModel/>
     </Window.DataContext>
+
+    <Window.Resources>
+        <!-- Converters -->
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <conv:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+        <conv:FileSizeConverter x:Key="FileSizeConverter"/>
+        <conv:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <conv:ImagePreviewConverter x:Key="ImagePreviewConverter"/>
+        <conv:ImagePreviewVisibilityConverter x:Key="ImagePreviewVisibilityConverter"/>
+        <conv:TextPreviewConverter x:Key="TextPreviewConverter"/>
+        <conv:TextPreviewVisibilityConverter x:Key="TextPreviewVisibilityConverter"/>
+    </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -92,18 +104,11 @@
         <!-- Log Console -->
         <DockPanel Grid.Row="3">
             <TextBlock Text="Log" DockPanel.Dock="Top" FontWeight="Bold" Margin="5"/>
-            <TextBox Text="{Binding LogText}" 
+            <TextBox Text="{Binding LogText, Mode=OneWay}" 
                      IsReadOnly="True" 
                      VerticalScrollBarVisibility="Auto" 
                      FontFamily="Consolas"
                      Height="100"/>
         </DockPanel>
     </Grid>
-
-    <Window.Resources>
-        <!-- Converters -->
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-
-        <!-- Custom converters would need to be implemented as separate classes -->
-    </Window.Resources>
 </Window>

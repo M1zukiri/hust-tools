@@ -150,8 +150,11 @@ def main(argv=None):
         else:
             print("[提示] 已保存的 cookie 已失效，可运行 bilidown --login 更新")
 
+    extract_opts = {"quiet": True}
+    if cookies:
+        extract_opts["cookiefile"] = cookies
     try:
-        info = extract_info(args.url, {"quiet": True})
+        info = extract_info(args.url, extract_opts)
     except Exception as e:
         print(f"[错误] 无法解析链接：{e}")
         return 1

@@ -17,6 +17,7 @@
 | 7 | **Tree_maker** | 生成目录树结构文本 | `python tree_maker.py -d <深度>` |
 | 8 | **Pdf_Tool** | PDF 页面提取/合并/图片转 PDF | `python pdf_tool.py <extract|merge|convert> ...` |
 | 9 | **bilidown** | B 站视频/音频下载 | `python bilidown.py <链接>` |
+| 10 | **ncmconvert** | 网易云 NCM 转 MP3/FLAC | `python ncm2music.py <文件或文件夹>`（无参数打开图形界面） |
 
 ---
 
@@ -34,6 +35,7 @@
 - [Tree_maker/](./Tree_maker/README.md) — 目录树生成器
 - [Pdf_Tool/](./Pdf_Tool/README.md) — PDF 页面处理工具（提取/合并/图片转 PDF）
 - [bilidown/](./bilidown/README.md) — 视频下载工具
+- [ncmconvert/](./ncmconvert/README.md) — 网易云 NCM 格式转换器
 
 ---
 

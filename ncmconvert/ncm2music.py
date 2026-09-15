@@ -193,43 +193,72 @@ def _parse_meta(meta_bytes):
     return meta if isinstance(meta, dict) else {}
 
 
+def _read_block_len(f, file_size, what):
+    """读取 4 字节小端块长度并做边界校验，防截断/篡改导致错位解析"""
+    raw = f.read(4)
+    if len(raw) < 4:
+        raise NcmError(f"文件被截断：缺少「{what}」长度字段")
+    n = struct.unpack("<I", raw)[0]
+    if f.tell() + n > file_size:
+        raise NcmError(f"文件已损坏：「{what}」长度({n})超出文件剩余数据（文件可能被截断或篡改）")
+    return n
+
+
+def _looks_like_image(data):
+    return data[:3] == b"\xFF\xD8\xFF" or data[:8] == b"\x89PNG\r\n\x1a\n"
+
+
 def read_ncm(path):
     """解析 ncm 文件，返回 (音频数据 bytes, 元数据 dict)"""
-    with open(path, "rb") as f:
-        if f.read(8) != NCM_MAGIC:
-            raise NcmError("不是有效的 ncm 文件（文件头不匹配）")
-        f.seek(2, os.SEEK_CUR)
+    try:
+        with open(path, "rb") as f:
+            file_size = os.fstat(f.fileno()).st_size
+            if f.read(8) != NCM_MAGIC:
+                raise NcmError("不是有效的 ncm 文件（文件头不匹配）")
+            f.seek(2, os.SEEK_CUR)
 
-        # --- 密钥块 ---
-        key_len = struct.unpack("<I", f.read(4))[0]
-        key_data = bytes(b ^ 0x64 for b in f.read(key_len))
-        key = _aes_ecb_decrypt(_CORE_KEY, key_data)
-        if key[:17] == b"neteasecloudmusic":
+            # --- 密钥块 ---
+            key_len = _read_block_len(f, file_size, "密钥块")
+            if key_len == 0 or key_len % 16 != 0:
+                raise NcmError("文件已损坏：密钥块长度异常")
+            key_data = bytes(b ^ 0x64 for b in f.read(key_len))
+            key = _aes_ecb_decrypt(_CORE_KEY, key_data)
+            if key[:17] != b"neteasecloudmusic":
+                raise NcmError("文件已损坏：密钥块校验失败（非标准 ncm 或数据被篡改）")
             key = key[17:]
-        if not key:
-            raise NcmError("解密密钥失败")
-        ks = _build_key_box(key)
+            if not key:
+                raise NcmError("文件已损坏：解出的密钥为空")
+            ks = _build_key_box(key)
 
-        # --- 元数据块 ---
-        meta = {}
-        meta_len = struct.unpack("<I", f.read(4))[0]
-        if meta_len:
-            meta = _parse_meta(f.read(meta_len))
+            # --- 元数据块 ---
+            meta = {}
+            meta_len = _read_block_len(f, file_size, "元数据块")
+            if meta_len:
+                meta = _parse_meta(f.read(meta_len))
 
-        # --- CRC + 间隔 + 封面 ---
-        f.seek(4 + 5, os.SEEK_CUR)
-        cover_len = struct.unpack("<I", f.read(4))[0]
-        if cover_len:
-            f.seek(cover_len, os.SEEK_CUR)
+            # --- CRC32（计算方式未公开，跳过不校验）+ 5 字节间隔 ---
+            if f.seek(4 + 5, os.SEEK_CUR) > file_size:
+                raise NcmError("文件被截断：缺少封面/音频数据")
 
-        # --- 音频数据（分块异或，控制内存占用） ---
-        chunks = []
-        while True:
-            chunk = f.read(16 * 1024 * 1024)  # 16 MB，且为 256 的整数倍
-            if not chunk:
-                break
-            chunks.append(_xor_stream(chunk, ks))
-        return b"".join(chunks), meta
+            # --- 封面 ---
+            cover_len = _read_block_len(f, file_size, "封面")
+            if cover_len:
+                cover = f.read(cover_len)
+                if not _looks_like_image(cover):
+                    raise NcmError("文件已损坏：封面数据不是 JPEG/PNG（长度字段可能被篡改）")
+
+            # --- 音频数据（分块异或，控制内存占用） ---
+            chunks = []
+            while True:
+                chunk = f.read(16 * 1024 * 1024)  # 16 MB，且为 256 的整数倍
+                if not chunk:
+                    break
+                chunks.append(_xor_stream(chunk, ks))
+            return b"".join(chunks), meta
+    except NcmError:
+        raise
+    except (struct.error, IndexError, ValueError, OverflowError, MemoryError) as e:
+        raise NcmError(f"文件已损坏或格式不支持（{type(e).__name__}）") from e
 
 
 _INVALID_CHARS = '\\/:*?"<>|'
@@ -244,8 +273,14 @@ def detect_format(audio, meta):
         return "flac"
     if audio[:3] == b"ID3" or (audio[0] == 0xFF and (audio[1] & 0xE0) == 0xE0):
         return "mp3"
+    if audio[4:8] == b"ftyp":
+        return "m4a"
+    if audio[:4] == b"RIFF" and audio[8:12] == b"WAVE":
+        return "wav"
+    if audio[:4] == b"OggS":
+        return "ogg"
     fmt = str(meta.get("format", "")).lower()
-    return fmt if fmt in ("mp3", "flac") else "mp3"
+    return fmt if fmt in ("mp3", "flac", "m4a", "wav", "ogg") else "mp3"
 
 
 def make_output_name(meta, fallback, fmt):
@@ -479,21 +514,50 @@ def run_gui():
 
 def main(argv):
     args = list(argv)
-    out_dir = None
-    if "-o" in args:
-        i = args.index("-o")
-        if i + 1 >= len(args):
-            print("错误：-o 后需要输出目录")
-            return 2
-        out_dir = args[i + 1]
-        del args[i:i + 2]
 
     if not args:
         run_gui()
         return 0
 
-    files = collect_ncm_files(args)
+    out_dir = None
+    inputs = []
+    unknown = []
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a == "-o":
+            if out_dir is not None:
+                print("错误：-o 只能指定一次")
+                return 2
+            if i + 1 >= len(args):
+                print("错误：-o 后需要输出目录")
+                return 2
+            out_dir = args[i + 1]
+            i += 2
+        elif a.startswith("-"):
+            unknown.append(a)
+            i += 1
+        else:
+            inputs.append(a)
+            i += 1
+
+    if unknown:
+        print("错误：未知参数 " + " ".join(unknown))
+        return 2
+    if not inputs:
+        print("错误：没有指定要转换的 .ncm 文件或目录")
+        print("提示：不带任何参数运行可打开图形界面")
+        return 2
+
+    files = collect_ncm_files(inputs)
     if not files:
+        for p in inputs:
+            if not os.path.exists(p):
+                print(f"  路径不存在: {p}")
+            elif os.path.isdir(p):
+                print(f"  目录中没有 .ncm 文件: {p}")
+            else:
+                print(f"  不是 .ncm 扩展名的文件: {p}")
         print("没有找到 .ncm 文件")
         return 1
 
